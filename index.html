@@ -34,6 +34,18 @@
             <p class="text-lg sm:text-xl text-indigo-600 font-semibold mt-2">Enzo Marques Rodrigues Viola - Grupo F</p>
         </header>
 
+        <!-- Barra de Progresso Total -->
+        <div id="total-progress-section" class="mb-8 p-6 bg-white rounded-2xl shadow-lg border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Progresso Total do 10º Semestre</h2>
+            <div class="w-full bg-gray-200 rounded-full h-4">
+                <div id="total-progress-bar" class="bg-green-600 h-4 rounded-full transition-all duration-500" style="width: 0%;"></div>
+            </div>
+            <div class="flex justify-between text-sm font-medium text-gray-600 mt-2">
+                <span id="days-passed-text">Dias concluídos: 0</span>
+                <span id="days-remaining-text">Dias restantes: 0</span>
+            </div>
+        </div>
+
         <!-- Seção de Busca por Data -->
         <div id="search-section" class="bg-white p-6 rounded-2xl shadow-lg mb-10 sticky top-4 z-10 border border-gray-200">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Onde estarei neste dia?</h2>
@@ -76,6 +88,32 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
+            // --- Lógica da Barra de Progresso Total ---
+            if (scheduleData.length > 0) {
+                const internShipStartDate = new Date(scheduleData[0].startDate + 'T00:00:00');
+                const internShipEndDate = new Date(scheduleData[scheduleData.length - 1].endDate + 'T00:00:00');
+                
+                const totalDurationMs = internShipEndDate.getTime() - internShipStartDate.getTime();
+                const totalDays = Math.ceil(totalDurationMs / (1000 * 60 * 60 * 24)) + 1; // Add 1 to include the last day
+
+                let elapsedDays = 0;
+                if (today >= internShipStartDate) {
+                    const elapsedMs = today.getTime() - internShipStartDate.getTime();
+                    // We use floor here to count full days passed
+                    elapsedDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+                }
+                
+                // Clamp days to be within the total duration
+                elapsedDays = Math.max(0, Math.min(elapsedDays, totalDays));
+
+                const remainingDays = totalDays - elapsedDays;
+                const totalProgressPercentage = totalDays > 0 ? (elapsedDays / totalDays) * 100 : 0;
+
+                document.getElementById('total-progress-bar').style.width = `${totalProgressPercentage}%`;
+                document.getElementById('days-passed-text').textContent = `Dias concluídos: ${elapsedDays}`;
+                document.getElementById('days-remaining-text').textContent = `Dias restantes: ${remainingDays}`;
+            }
+
             const formatDate = (dateString) => {
                 const date = new Date(dateString + 'T00:00:00');
                 const day = String(date.getDate()).padStart(2, '0');
@@ -94,7 +132,7 @@
                     const isFuture = today < startDate;
                     const isVacation = item.area.toLowerCase().includes('férias');
 
-                    // --- Lógica da Barra de Progresso ---
+                    // --- Lógica da Barra de Progresso Individual ---
                     let progressPercentage = 0;
                     if (isCurrent) {
                         const totalDuration = endDate.getTime() - startDate.getTime();
